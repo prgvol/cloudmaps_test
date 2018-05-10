@@ -341,6 +341,46 @@ module.exports = {
     else{
       return res.badRequest();
     }
-  }
-};
+  },
 
+  sendEmail: function (req, res) {
+    if (typeof req.session.user != 'undefined') {
+      user = req.session.user;
+    }
+      else {
+        res.view('user/error', {message: 'При отправке письма произошла ошибка: невозможно определить пользователя.'});
+    }
+
+    var nodemailer = require('nodemailer');
+    var smtpTransport = require('nodemailer-smtp-transport');
+    var transporter = nodemailer.createTransport(smtpTransport({
+      host: 'localhost',
+      port: 25,
+      ignoreTLS: true
+    })
+  );
+
+  var mailOptions = {
+    from: 'test@cloudmaps.ru',
+    to: user.email,
+    subject: 'User Activation Email',
+
+    text: 'http://localhost:1337/user/register/?id=' + user.id + '&t=' + user.password
+  };
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      res.view('user/error', {message: 'При отправке письма произошла ошибка: ' + error.message});
+    }
+
+    else {
+
+      delete req.session.user;
+      res.view('user/after_register');
+    }
+  });
+
+  }
+
+
+
+}
